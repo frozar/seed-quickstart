@@ -7,12 +7,14 @@ use seed::prelude::*;
 
 struct Model {
     pub val: i32,
+    pub coords: (i32, i32),
 }
 
 impl Default for Model {
     fn default() -> Self {
         Self {
             val: 0,
+            coords: (0, 0),
         }
     }
 }
@@ -23,11 +25,13 @@ impl Default for Model {
 #[derive(Clone)]
 enum Msg {
     Increment,
+    UpdateCoords(web_sys::MouseEvent),
 }
 
 fn update(msg: Msg, model: &mut Model) -> Update<Msg> {
     match msg {
         Msg::Increment => model.val += 1,
+        Msg::UpdateCoords(ev) => model.coords = (ev.screen_x(), ev.screen_y()),
     }
     Render.into()
 }
@@ -115,12 +119,14 @@ fn view(model: &Model) -> El<Msg> {
     // ]
 
     let mut page = div! [];
+    let mouse_div = div! [format!("cell-{}", model.coords.0)];
+    page.children.push(mouse_div);
 
     let title = h1![
         style! {
             "text-align" => "center"
         },
-        "8 Queens Problem"
+        "8 Queens Puzzle"
     ];
     page.children.push(title);
 
@@ -145,9 +151,19 @@ fn view(model: &Model) -> El<Msg> {
     page
 }
 
+fn window_events(model: &Model) -> Vec<seed::dom_types::Listener<Msg>> {
+    let mut result = Vec::new();
+    // if model.watching {
+    result.push(mouse_ev("mousemove", |ev| Msg::UpdateCoords(ev)));
+    // result.push(keyboard_ev("keydown", |ev| Msg::KeyPressed(ev)));
+    // }
+    result
+}
+
 #[wasm_bindgen]
 pub fn render() {
     seed::App::build(Model::default(), update, view)
+        .window_events(window_events)
         .finish()
         .run();
 
